@@ -23,3 +23,5 @@ Route::get('users', 'UserController@index');
 Route::post('register', 'UserController@register');
 
 Route::post('login', 'UserController@login');
+
+Route::resource('votes', 'VoteController');
