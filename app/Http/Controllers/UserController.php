@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UserRequest;
 use App\User;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -27,7 +29,7 @@ class UserController extends Controller
      * @param UserRequest $request
      * @return JsonResponse
      */
-    public function store(UserRequest $request)
+    public function register(UserRequest $request)
     {
 
         $user = new User([
@@ -44,38 +46,48 @@ class UserController extends Controller
         ], 201);
     }
 
-    /**
-     * Display the specified resource.
+     /**
+     * Login user and create token
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param  [string] email
+     * @param  [string] password
+     * @param  [boolean] remember_me
+     * @return [string] access_token
+     * @return [string] token_type
+     * @return [string] expires_at
      */
-    public function show($id)
+    public function login(Request $request)
     {
-        //
-    }
+        $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+            'remember_me' => 'boolean'
+        ]);
+        $credentials = request(['email', 'password']);
+        
+        if(!Auth::attempt($credentials))
+            return response()->json([
+                'message' => 'Invalid login credentails'
+            ], 401);
 
+        $user = $request->user();
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
+        $tokenResult = $user->createToken('Personal Access Token');
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
+        $token = $tokenResult->token;
+        if ($request->remember_me)
+            $token->expires_at = Carbon::now()->addWeeks(1);
+        $token->save();
+
+        return response()->json([
+            'user'=> $user,
+            'access_token' => $tokenResult->accessToken,
+            'token_type' => 'Bearer',
+            'expires_at' => Carbon::parse(
+                $tokenResult->token->expires_at
+            )->toDateTimeString()
+        ]);
     }
+  
+
 }
