@@ -16,14 +16,15 @@ class UserSeeder extends Seeder
     {
         foreach (range(0, 10) as $number) {
             $rand = rand(0, 1);
-            dump($rand);
+            $party_rand = rand(0, 4);
             DB::table('users')->insert([
                 'name' => Str::random(10),
                 'email' => Str::random(10).'@gmail.com',
                 'password' => Hash::make('password'),
                 'is_candidate'=> $rand == 0 ? false : true,
                 'created_at'=>\Carbon\Carbon::now(),
-                'updated_at' =>\Carbon\Carbon::now()
+                'updated_at' =>\Carbon\Carbon::now(),
+                'party'=> \App\User::$parties[$party_rand]
             ]);
         }
     }
